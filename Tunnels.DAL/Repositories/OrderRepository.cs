@@ -109,8 +109,20 @@ namespace Tunnels.DAL.Repositories {
 
         public async Task<Order> CreateOrder(Order order) {
             foreach (var productEntry in order.ProductsEntries) {
-                if (productEntry.ProductId == 0)
+                if (productEntry.ProductId == 0) {
                     TunnelsDbContext.Entry<Product>(productEntry.Product).State = EntityState.Added;
+
+                }
+                else {
+                    TunnelsDbContext.Entry<Product>(productEntry.Product).State = EntityState.Modified;
+
+                    var product = await TunnelsDbContext.Products.FirstOrDefaultAsync(p => p.Id == productEntry.ProductId);
+                    if (product != null) {
+                        product.CurrentQuantity = productEntry.Quantity;
+                        TunnelsDbContext.Products.Update(product);
+                    }
+                }
+                //TODO
             }
             //TunnelsDbContext.Entry(order.UserId).State = EntityState.Unchanged;
             var result = await TunnelsDbContext.Orders.AddAsync(order);

@@ -8,8 +8,9 @@ namespace Tunnels.DTOs.Product {
         public DateTime DateAdded { get; set; }
         public string Name { get; set; }
         public string DistributionCompany { get; set; }
-        public double Total { get; set; }
-        public bool IsActive { get; set; }
         public string Type { get; set; }
+        public double InitialQuantity { get; set; }
+        public double CurrentQuantity { get; set; }
+        public bool IsActive { get; set; }
     }
 }

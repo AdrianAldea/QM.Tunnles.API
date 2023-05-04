@@ -7,6 +7,8 @@ namespace Tunnels.Core.Models {
         public string Name { get; set; }
         public string DistributionCompany { get; set; }
         public string Type { get; set; }
+        public double InitialQuantity { get; set; }
+        public double CurrentQuantity { get; set; }
         public bool IsActive { get; set; }
     }
 }
