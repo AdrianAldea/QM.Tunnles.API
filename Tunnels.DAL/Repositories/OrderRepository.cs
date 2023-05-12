@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using Tunnels.Core.Models;
 using Tunnels.Core.Repositories;
@@ -111,19 +113,14 @@ namespace Tunnels.DAL.Repositories {
             foreach (var productEntry in order.ProductsEntries) {
                 if (productEntry.ProductId == 0) {
                     TunnelsDbContext.Entry<Product>(productEntry.Product).State = EntityState.Added;
-
                 }
                 else {
-                    TunnelsDbContext.Entry<Product>(productEntry.Product).State = EntityState.Modified;
-
                     var product = await TunnelsDbContext.Products.FirstOrDefaultAsync(p => p.Id == productEntry.ProductId);
-                    if (product != null) {
-                        product.CurrentQuantity = productEntry.Quantity;
-                        TunnelsDbContext.Products.Update(product);
-                    }
+                    TunnelsDbContext.Entry(product).Property("CurrentQuantity").CurrentValue = Convert.ToDouble(TunnelsDbContext.Entry(product).Property("CurrentQuantity").CurrentValue) - productEntry.Product.CurrentQuantity;
                 }
-                //TODO
             }
+
+            order.ProductsEntries = new List<ProductEntry>();
             //TunnelsDbContext.Entry(order.UserId).State = EntityState.Unchanged;
             var result = await TunnelsDbContext.Orders.AddAsync(order);
             return result.Entity;
