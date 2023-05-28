@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using Tunnels.Core.Models;
@@ -11,6 +12,7 @@ namespace Tunnels.DAL.Repositories {
     public class OrderRepository : Repository<Order>, IOrderRepository {
 
         private TunnelsDbContext TunnelsDbContext => Context as TunnelsDbContext;
+
         public OrderRepository(TunnelsDbContext context)
             : base(context) { }
 
@@ -20,11 +22,15 @@ namespace Tunnels.DAL.Repositories {
             switch (ordersWithProductsFilter.FilterType) {
                 case FilterTypeEnum.NoFilter:
                     if (ordersWithProductsFilter.IsActive == null) {
-                        return await TunnelsDbContext.Orders.Include(p => p.ProductsEntries).ThenInclude(x => x.Product).Include(u => u.User).ToListAsync();
+                        return await TunnelsDbContext.Orders.Include(p => p.ProductsEntries).ThenInclude(x => x.Product)
+                            .Include(u => u.User).ToListAsync();
                     }
                     else {
-                        return await TunnelsDbContext.Orders.Include(p => p.ProductsEntries.Where(x => x.Product.IsActive == ordersWithProductsFilter.IsActive)).ThenInclude(x => x.Product).Include(u => u.User).ToListAsync();
+                        orders = await TunnelsDbContext.Orders.Include(p => p.ProductsEntries
+                        .Where(x => x.Product.IsActive == ordersWithProductsFilter.IsActive))
+                            .ThenInclude(x => x.Product).Include(u => u.User).ToListAsync();
                     }
+                    break;
                 case FilterTypeEnum.ByDate:
 
                     if (ordersWithProductsFilter.StartDate == ordersWithProductsFilter.EndDate) {
@@ -44,46 +50,49 @@ namespace Tunnels.DAL.Repositories {
                             .ThenInclude(x => x.Product).Include(u => u.User);
                     }
 
-                    return await result.ToListAsync();
+                    orders = await result.ToListAsync();
+                    break;
                 case FilterTypeEnum.ByOrderId:
                     if (ordersWithProductsFilter.IsActive == null) {
-                        return await TunnelsDbContext.Orders.Include(p => p.ProductsEntries)
+                        orders = await TunnelsDbContext.Orders.Include(p => p.ProductsEntries)
                         .ThenInclude(x => x.Product).Include(u => u.User)
                         .Where(x => x.Id == ordersWithProductsFilter.OrderId)
                         .ToListAsync();
                     }
                     else {
-                        return await TunnelsDbContext.Orders.Include(p => p.ProductsEntries.Where(x => x.Product.IsActive == ordersWithProductsFilter.IsActive))
+                        orders = await TunnelsDbContext.Orders.Include(p => p.ProductsEntries.Where(x => x.Product.IsActive == ordersWithProductsFilter.IsActive))
                         .ThenInclude(x => x.Product).Include(u => u.User)
                         .Where(x => x.Id == ordersWithProductsFilter.OrderId)
                         .ToListAsync();
                     }
+                    break;
                 case FilterTypeEnum.ByProductId:
                     if (ordersWithProductsFilter.IsActive == null) {
-                        return await TunnelsDbContext.Orders
+                        orders = await TunnelsDbContext.Orders
                          .Include(p => p.ProductsEntries.Where(x => x.ProductId == ordersWithProductsFilter.ProductId))
                          .ThenInclude(x => x.Product).Include(u => u.User)
                          .ToListAsync();
                     }
                     else {
-                        return await TunnelsDbContext.Orders
+                        orders = await TunnelsDbContext.Orders
                         .Include(p => p.ProductsEntries.Where(x => x.ProductId == ordersWithProductsFilter.ProductId && x.Product.IsActive == ordersWithProductsFilter.IsActive))
                         .ThenInclude(x => x.Product).Include(u => u.User)
                         .ToListAsync();
                     }
+                    break;
                 case FilterTypeEnum.ByDateAndProductId:
                     if (ordersWithProductsFilter.StartDate == ordersWithProductsFilter.EndDate) {
                         ordersWithProductsFilter.EndDate = ordersWithProductsFilter.EndDate.Value.AddHours(23).AddMinutes(59).AddSeconds(59);
                     }
 
-                    Order order = TunnelsDbContext.Orders.Where(x => x.OperationType == OperationTypeEnum.OUT)
+                    Order order = TunnelsDbContext.Orders
                             .Include(p => p.ProductsEntries
                                 .Where(x => x.ProductId == ordersWithProductsFilter.ProductId))
                             .ThenInclude(x => x.Product).Include(u => u.User).Select(x => x).FirstOrDefault();
                     orders.Add(order);
 
                     if (ordersWithProductsFilter.IsActive == null) {
-                        result = TunnelsDbContext.Orders.Where(x => x.OperationType == OperationTypeEnum.IN)
+                        result = TunnelsDbContext.Orders
                             .Include(p => p.ProductsEntries
                                 .Where(x => x.DateAdded >= ordersWithProductsFilter.StartDate
                                 && x.DateAdded <= ordersWithProductsFilter.EndDate && x.ProductId == ordersWithProductsFilter.ProductId))
@@ -98,7 +107,7 @@ namespace Tunnels.DAL.Repositories {
                             .ThenInclude(x => x.Product).Include(u => u.User);
                     }
                     orders.AddRange(await result.ToListAsync());
-                    return orders;
+                    break;
                 default:
                     if (ordersWithProductsFilter.IsActive == null) {
                         return await TunnelsDbContext.Orders.Include(p => p.ProductsEntries).ThenInclude(x => x.Product).Include(u => u.User).ToListAsync();
@@ -107,21 +116,29 @@ namespace Tunnels.DAL.Repositories {
                         return await TunnelsDbContext.Orders.Include(p => p.ProductsEntries.Where(x => x.Product.IsActive == ordersWithProductsFilter.IsActive)).ThenInclude(x => x.Product).Include(u => u.User).ToListAsync();
                     }
             }
+
+            if (ordersWithProductsFilter.OperationType != OperationTypeEnum.ALL) {
+                orders = orders.Where(x => x.OperationType == ordersWithProductsFilter.OperationType).ToList();
+            }
+            return orders;
         }
 
         public async Task<Order> CreateOrder(Order order) {
             foreach (var productEntry in order.ProductsEntries) {
-                if (productEntry.ProductId == 0) {
+                if (productEntry.ProductId == 0) { // Add product
                     TunnelsDbContext.Entry<Product>(productEntry.Product).State = EntityState.Added;
                 }
-                else {
+                else { // Update Product
                     var product = await TunnelsDbContext.Products.FirstOrDefaultAsync(p => p.Id == productEntry.ProductId);
-                    TunnelsDbContext.Entry(product).Property("CurrentQuantity").CurrentValue = Convert.ToDouble(TunnelsDbContext.Entry(product).Property("CurrentQuantity").CurrentValue) - productEntry.Product.CurrentQuantity;
+                    product.CurrentQuantity = product.CurrentQuantity - productEntry.Product.CurrentQuantity;
+                    product.CurrentValue = product.CurrentQuantity * product.BuyPrice;
+                    if (product.CurrentQuantity == 0) {
+                        product.IsActive = false;
+                    }
+                    productEntry.Product = product;
                 }
             }
 
-            order.ProductsEntries = new List<ProductEntry>();
-            //TunnelsDbContext.Entry(order.UserId).State = EntityState.Unchanged;
             var result = await TunnelsDbContext.Orders.AddAsync(order);
             return result.Entity;
         }

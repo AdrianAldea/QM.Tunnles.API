@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using Tunnels.Core;
@@ -25,8 +26,10 @@ namespace Tunnels {
             services.AddControllers().AddJsonOptions(x =>
                 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
-            services.AddDbContext<TunnelsDbContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("Default")));
+            services.AddDbContext<TunnelsDbContext>(options => {
+                options.UseSqlServer(Configuration.GetConnectionString("Default"));
+                options.EnableSensitiveDataLogging();
+            });
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddTransient<IProductService, ProductService>();
@@ -64,6 +67,11 @@ namespace Tunnels {
             app.UseSwaggerUI(c => {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
             });
+
+            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope()) {
+                var context = serviceScope.ServiceProvider.GetRequiredService<TunnelsDbContext>();
+                context.Database.EnsureCreated();
+            }
         }
     }
 }

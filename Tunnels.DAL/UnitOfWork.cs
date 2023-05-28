@@ -16,7 +16,7 @@ namespace Tunnels.DAL {
         public UnitOfWork(TunnelsDbContext context) {
             _context = context;
             //_context.Database.EnsureDeleted(); // TODO: DELETE IN PRODUCTION AFTER MIGRATIONS IMPLEMENTATION, EnsureDeleted DELETE DB IF EXISTS
-            _context.Database.EnsureCreated();
+            //_context.Database.EnsureCreated();
             AddAdminUser();
         }
 
@@ -24,9 +24,9 @@ namespace Tunnels.DAL {
             if (this.Users.GetAllUsers().Result.Count == 0) {
                 await this.Users.AddAsync(new User {
                     DateAdded = DateTime.Now,
-                    Email = "",
+                    Email = "suntadrian@gmail.com",
                     Name = "System Administrator",
-                    Password = "123",
+                    Password = "123123",
                     Role = RolesEnum.Administrator,
                     Username = "sa"
                 });
