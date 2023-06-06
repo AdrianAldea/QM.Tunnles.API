@@ -8,6 +8,7 @@ namespace Tunnels.Core.Models {
         public double? ProductId { get; set; } = null;
         public double? OrderId { get; set; } = null;
         public bool? IsActive { get; set; } = null;
+        public bool? IsOrderActive { get; set; } = null;
         public OperationTypeEnum OperationType { get; set; }
     }
 }

@@ -10,6 +10,7 @@ namespace Tunnels.Core.Mappers {
                 foreach (var productEntry in order.ProductsEntries) {
                     var orderWithProduct = new OrdersWithProductsView {
                         IsActive = productEntry.Product.IsActive,
+                        IsOrderActive = order.IsActive,
                         CreatedByUser = order.User.Name,
                         DateAdded = productEntry.DateAdded,
                         DistributionCompany = productEntry.Product.DistributionCompany,

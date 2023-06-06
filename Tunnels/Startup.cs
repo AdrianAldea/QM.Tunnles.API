@@ -27,7 +27,7 @@ namespace Tunnels {
                 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
             services.AddDbContext<TunnelsDbContext>(options => {
-                options.UseSqlServer(Configuration.GetConnectionString("Default"));
+                options.UseSqlServer(Configuration.GetConnectionString("Default"), b => b.MigrationsAssembly("Tunnels"));
                 options.EnableSensitiveDataLogging();
             });
 

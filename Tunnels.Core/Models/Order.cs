@@ -12,5 +12,6 @@ namespace Tunnels.Core.Models {
         public double Price { get; set; }
         public double Total { get; set; }
         public OperationTypeEnum OperationType { get; set; }
+        public bool IsActive { get; set; }
     }
 }

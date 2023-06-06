@@ -14,6 +14,7 @@ namespace Tunnels.DTOs.User {
         public Tunnels.Core.Models.User? User { get; set; }
         public double Stock { get; set; }
         public double Price { get; set; }
+        public bool IsActive { get; set; }
         public OperationTypeEnum OperationType { get; set; }
     }
 }

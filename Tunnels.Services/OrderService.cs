@@ -20,6 +20,12 @@ namespace Tunnels.Services {
             return orderCreated;
         }
 
+        public async Task InvalidateOrder(int orderId) {
+
+            await _unitOfWork.Orders.InvalidateOrder(orderId);
+            await _unitOfWork.CommitAsync();
+        }
+
         public async Task<List<OrdersWithProductsView>> GetAllOrdersWithProductsByFilterAsync(OrdersWithProductsFilterRequest ordersWithProductsFilter) {
             var orders = await _unitOfWork.Orders.GetAllOrdersWithProductsByFilterAsync(ordersWithProductsFilter);
             var ordersView = OrdersWithProductsMapper.Map(orders);

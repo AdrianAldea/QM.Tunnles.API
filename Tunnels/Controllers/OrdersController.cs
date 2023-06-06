@@ -48,6 +48,19 @@ namespace Tunnels.Controllers {
             return Ok(OrderResource);
         }
 
+        /// <summary>
+        /// Inactivate an order
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <returns></returns>
+        [HttpDelete("{orderId}")]
+        public async Task<ActionResult<CreateOrderResponse>> UpdateOrder([FromQuery] int orderId) {
+
+            await _orderService.InvalidateOrder(orderId);
+
+            return Ok(orderId);
+        }
+
         #endregion
 
         #region Get
@@ -60,11 +73,6 @@ namespace Tunnels.Controllers {
         public async Task<ActionResult<List<OrdersWithProductsView>>> GetAllOrdersWithProductsByFilterAsync(OrdersWithProductsFilterRequest ordersWithProductsFilter) {
             var Orders = await _orderService.GetAllOrdersWithProductsByFilterAsync(ordersWithProductsFilter);
 
-            //GetOrdersResponse result = new GetOrdersResponse();
-            //foreach (var Order in Orders) {
-            //    var getOrderResponse = _mapper.Map<Order, GetOrdersResponse>(Order);
-            //    result.Orders.Add(getOrderResponse);
-            //}
             return Ok(Orders);
         }
 

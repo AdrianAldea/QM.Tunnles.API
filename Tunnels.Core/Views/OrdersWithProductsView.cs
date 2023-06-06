@@ -15,5 +15,6 @@ namespace Tunnels.Core.Views {
         public string CreatedByUser { get; set; }
         public OperationTypeEnum OperationType { get; set; }
         public bool? IsActive { get; set; }
+        public bool? IsOrderActive { get; set; }
     }
 }

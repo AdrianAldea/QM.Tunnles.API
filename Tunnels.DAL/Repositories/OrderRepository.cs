@@ -22,7 +22,7 @@ namespace Tunnels.DAL.Repositories {
             switch (ordersWithProductsFilter.FilterType) {
                 case FilterTypeEnum.NoFilter:
                     if (ordersWithProductsFilter.IsActive == null) {
-                        return await TunnelsDbContext.Orders.Include(p => p.ProductsEntries).ThenInclude(x => x.Product)
+                        orders = await TunnelsDbContext.Orders.Include(p => p.ProductsEntries).ThenInclude(x => x.Product)
                             .Include(u => u.User).ToListAsync();
                     }
                     else {
@@ -120,6 +120,10 @@ namespace Tunnels.DAL.Repositories {
             if (ordersWithProductsFilter.OperationType != OperationTypeEnum.ALL) {
                 orders = orders.Where(x => x.OperationType == ordersWithProductsFilter.OperationType).ToList();
             }
+            if (ordersWithProductsFilter.IsOrderActive != null) {
+                orders = orders.Where(x => x.IsActive == ordersWithProductsFilter.IsOrderActive).ToList();
+            }
+
             return orders;
         }
 
@@ -141,6 +145,15 @@ namespace Tunnels.DAL.Repositories {
 
             var result = await TunnelsDbContext.Orders.AddAsync(order);
             return result.Entity;
+        }
+
+        public async Task InvalidateOrder(int orderId) {
+            var order = await TunnelsDbContext.Orders.FirstOrDefaultAsync(p => p.Id == orderId);
+            if (order != null) {
+                order.IsActive = false;
+                var result = TunnelsDbContext.Orders.Update(order);
+            }
+
         }
     }
 }
